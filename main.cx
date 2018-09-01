@@ -15,7 +15,6 @@ func initGlfw (window Window) {
 func startGame(window Window) {
     var currentTime f64
     var previousTime f64
-    var deltaTime f64
     var timer f64
     var fps i32
 
@@ -27,7 +26,6 @@ func startGame(window Window) {
 
     for bool.not(glfw.ShouldClose("window")) {
         currentTime = glfw.GetTime()
-        deltaTime = currentTime - previousTime
         previousTime = currentTime
         fps = fps + 1
 
@@ -37,37 +35,6 @@ func startGame(window Window) {
             i32.print(fps)
             str.print("")
             fps = 0
-        }
-
-        glfw.PollEvents()
-        glfw.SwapBuffers("window")
-    }
-}
-
-func startGameOld(window Window) {
-    var currentTime f64
-    var previousTime i64
-    var deltaTime i64
-    var deltaTimeFloat f64
-    var timer i64
-
-    initGlfw(window)
-
-    previousTime = glfw.GetTime()
-    timer = previousTime
-
-    for bool.not(glfw.ShouldClose("window")) {
-        currentTime = glfw.GetTime()
-        deltaTime = currentTime - previousTime
-        deltaTimeFloat = i64.f64(deltaTime)
-        previousTime = currentTime
-
-        if currentTime - timer > 1000000000000000L {
-            //str.print("delta time:")
-            //f64.print(deltaTimeFloat)
-            i64.print(currentTime)
-            i64.print(currentTime - timer)
-            timer = timer + 1000000000000000L
         }
 
         glfw.PollEvents()
