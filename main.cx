@@ -1,4 +1,5 @@
 package main
+import "glfw"
 
 // *************************************
 // START - FPS Manager
@@ -29,8 +30,7 @@ func createFpsManager(ticker f64)(fpsManager FpsManager) {
 func updateFpsManager(manager FpsManager)(fpsManager FpsManager) {
     manager.currentTime = glfw.GetTime()
     manager.previousTime = manager.currentTime
-    manager.fpsCounter = i32.add(manager.fpsCounter, 1)
-    manager.timer = 0
+    manager.fpsCounter = manager.fpsCounter + 1
 
     if manager.currentTime - manager.timer > manager.ticker {
         manager.timer = manager.timer + manager.ticker
