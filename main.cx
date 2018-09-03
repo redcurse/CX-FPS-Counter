@@ -52,24 +52,30 @@ type FpsLimiter struct {
     delta f64
     limit i32
     limitReached bool
+    enabled bool
 }
 
-func createFpsLimiter(limit i32)(fpsLimiter FpsLimiter) {
+func createFpsLimiter(limit i32, enabled bool)(fpsLimiter FpsLimiter) {
     var limiter FpsLimiter
     limiter.limit = limit
+    limiter.enabled = enabled
     fpsLimiter = limiter
 }
 
 func updateFpsLimiter(limiter FpsLimiter, currentTime f64)(fpsLimiter FpsLimiter) {
-    var ns f64 = 1.0D / i32.f64(limiter.limit)
-    limiter.delta = limiter.delta + (currentTime - limiter.previousTime) / ns
-    limiter.previousTime = currentTime
+    if limiter.enabled {
+        var ns f64 = 1.0D / i32.f64(limiter.limit)
+        limiter.delta = limiter.delta + (currentTime - limiter.previousTime) / ns
+        limiter.previousTime = currentTime
 
-    if limiter.delta >= 1.0D {
-        limiter.limitReached = true
-        limiter.delta = limiter.delta - 1.0D
+        if limiter.delta >= 1.0D {
+            limiter.limitReached = true
+            limiter.delta = limiter.delta - 1.0D
+        } else {
+            limiter.limitReached = false
+        }
     } else {
-        limiter.limitReached = false
+        limiter.limitReached = true
     }
 
     fpsLimiter = limiter
@@ -92,10 +98,10 @@ func initGlfw (window Window) {
 }
 
 func startGame() {
-    var fpsTicker f64 = 1.0D
+    var fpsTicker f64 = 0.5D
     var fpsDisplayer FpsDisplayer = createFpsDisplayer(fpsTicker)
     var fpsLimit i32 = 60
-    var fpsLimiter FpsLimiter = createFpsLimiter(fpsLimit)
+    var fpsLimiter FpsLimiter = createFpsLimiter(fpsLimit, true)
 
     for bool.not(glfw.ShouldClose("window")) {
         var currentTime f64 = glfw.GetTime()
