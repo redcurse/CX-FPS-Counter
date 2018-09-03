@@ -6,6 +6,7 @@ import "glfw"
 // *************************************
 type LoopTracker struct {
     loopName str
+    deltaTime f64
     previousTime f64
     timer f64
     ticker f64
@@ -27,6 +28,7 @@ func createLoopTracker(ticker f64, loopName str)(loopTracker LoopTracker) {
 }
 
 func updateLoopTracker(tracker LoopTracker, currentTime f64)(loopTracker LoopTracker) {
+    tracker.deltaTime = currentTime - tracker.previousTime
     tracker.previousTime = currentTime
     tracker.fpsCounter = tracker.fpsCounter + 1
 
@@ -107,7 +109,7 @@ func startGame() {
     var mainLoopTracker LoopTracker = createLoopTracker(mainLoopTicker, "Main loop")
     var fpsTicker f64 = 1.0D
     var fpsTracker LoopTracker = createLoopTracker(fpsTicker, "Render loop")
-    var fpsLimit i32 = 60
+    var fpsLimit i32 = 30
     var fpsLimiter LoopLimiter = createLoopLimiter(fpsLimit, true)
 
     for bool.not(glfw.ShouldClose("window")) {
@@ -116,7 +118,7 @@ func startGame() {
         mainLoopTracker = updateLoopTracker(mainLoopTracker, currentTime)
         fpsLimiter = updateLoopLimiter(fpsLimiter, currentTime)
         
-        mainGameUpdate()
+        mainGameUpdate(mainLoopTracker.deltaTime)
         
         if fpsLimiter.limitReached {
             fpsTracker = updateLoopTracker(fpsTracker, currentTime)   
@@ -126,7 +128,7 @@ func startGame() {
     }
 }
 
-func mainGameUpdate() {}
+func mainGameUpdate(deltaTime f64) {}
 
 func main() {
     var window Window
