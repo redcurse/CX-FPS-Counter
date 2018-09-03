@@ -46,7 +46,6 @@ func updateFpsDisplayer(displayer FpsDisplayer, currentTime f64)(fpsDisplayer Fp
 // *************************************
 // START - FPS Limiter
 // *************************************
-
 type FpsLimiter struct {
     previousTime f64
     delta f64
@@ -80,7 +79,6 @@ func updateFpsLimiter(limiter FpsLimiter, currentTime f64)(fpsLimiter FpsLimiter
 
     fpsLimiter = limiter
 }
-
 // *************************************
 // END - FPS Limiter
 // *************************************
@@ -98,7 +96,7 @@ func initGlfw (window Window) {
 }
 
 func startGame() {
-    var fpsTicker f64 = 0.5D
+    var fpsTicker f64 = 1.0D
     var fpsDisplayer FpsDisplayer = createFpsDisplayer(fpsTicker)
     var fpsLimit i32 = 60
     var fpsLimiter FpsLimiter = createFpsLimiter(fpsLimit, true)
@@ -109,11 +107,16 @@ func startGame() {
         
         if fpsLimiter.limitReached {
             fpsDisplayer = updateFpsDisplayer(fpsDisplayer, currentTime)
+            update()
         }
         
         glfw.PollEvents()
         glfw.SwapBuffers("window")
     }
+}
+
+func update() {
+
 }
 
 func main() {
