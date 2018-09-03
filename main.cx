@@ -2,51 +2,54 @@ package main
 import "glfw"
 
 // *************************************
-// START - FPS Displayer
+// START - Loop Tracker
 // *************************************
-type FpsDisplayer struct {
+type LoopTracker struct {
+    loopName str
     previousTime f64
     timer f64
     ticker f64
     fpsCounter i32
-    currentFps i32
-    showFps bool
+    currentLoopsPerSecond i32
+    showLoopsPerSecond bool
 }
 
-func createFpsDisplayer(ticker f64)(fpsDisplayer FpsDisplayer) {
-    var displayer FpsDisplayer
-    displayer.timer = 1.0D
-    displayer.ticker = ticker
-    displayer.fpsCounter = 0
-    displayer.currentFps = 0
-    displayer.showFps = true
+func createLoopTracker(ticker f64, loopName str)(loopTracker LoopTracker) {
+    var tracker LoopTracker
+    tracker.loopName = loopName
+    tracker.timer = 1.0D
+    tracker.ticker = ticker
+    tracker.fpsCounter = 0
+    tracker.currentLoopsPerSecond = 0
+    tracker.showLoopsPerSecond = true
 
-    fpsDisplayer = displayer
+    loopTracker = tracker
 }
 
-func updateFpsDisplayer(displayer FpsDisplayer, currentTime f64)(fpsDisplayer FpsDisplayer) {
-    displayer.previousTime = currentTime
-    displayer.fpsCounter = displayer.fpsCounter + 1
+func updateLoopTracker(tracker LoopTracker, currentTime f64)(loopTracker LoopTracker) {
+    tracker.previousTime = currentTime
+    tracker.fpsCounter = tracker.fpsCounter + 1
 
-    if currentTime - displayer.timer > displayer.ticker {
-        displayer.timer = displayer.timer + displayer.ticker
-        displayer.currentFps = f64.i32(i32.f64(displayer.fpsCounter) / displayer.ticker)
-        if displayer.showFps {
-            i32.print(displayer.currentFps)
+    if currentTime - tracker.timer > tracker.ticker {
+        tracker.timer = tracker.timer + tracker.ticker
+        tracker.currentLoopsPerSecond = f64.i32(i32.f64(tracker.fpsCounter) / tracker.ticker)
+        if tracker.showLoopsPerSecond {
+            printf("%s loops per second: %d \n", tracker.loopName, tracker.currentLoopsPerSecond)
         }
-        displayer.fpsCounter = 0
+        tracker.fpsCounter = 0
     }
 
-    fpsDisplayer = displayer
+    loopTracker = tracker
 }
 // *************************************
-// END - FPS Displayer
+// END - Loop Tracker
 // *************************************
 
+
 // *************************************
-// START - FPS Limiter
+// START - Loop Limiter
 // *************************************
-type FpsLimiter struct {
+type LoopLimiter struct {
     previousTime f64
     delta f64
     limit i32
@@ -54,17 +57,17 @@ type FpsLimiter struct {
     enabled bool
 }
 
-func createFpsLimiter(limit i32, enabled bool)(fpsLimiter FpsLimiter) {
-    var limiter FpsLimiter
+func createLoopLimiter(limit i32, enabled bool)(loopLimiter LoopLimiter) {
+    var limiter LoopLimiter
     limiter.limit = limit
     limiter.enabled = enabled
-    fpsLimiter = limiter
+    loopLimiter = limiter
 }
 
-func updateFpsLimiter(limiter FpsLimiter, currentTime f64)(fpsLimiter FpsLimiter) {
+func updateLoopLimiter(limiter LoopLimiter, currentTime f64)(loopLimiter LoopLimiter) {
     if limiter.enabled {
-        var ns f64 = 1.0D / i32.f64(limiter.limit)
-        limiter.delta = limiter.delta + (currentTime - limiter.previousTime) / ns
+        var fractionOfSecond f64 = 1.0D / i32.f64(limiter.limit)
+        limiter.delta = limiter.delta + (currentTime - limiter.previousTime) / fractionOfSecond
         limiter.previousTime = currentTime
 
         if limiter.delta >= 1.0D {
@@ -77,12 +80,16 @@ func updateFpsLimiter(limiter FpsLimiter, currentTime f64)(fpsLimiter FpsLimiter
         limiter.limitReached = true
     }
 
-    fpsLimiter = limiter
+    loopLimiter = limiter
 }
 // *************************************
-// END - FPS Limiter
+// END - Loop Limiter
 // *************************************
 
+
+// *************************************
+// Start - Example of Use
+// *************************************
 type Window struct {
     Height i32
     Width i32
@@ -96,28 +103,30 @@ func initGlfw (window Window) {
 }
 
 func startGame() {
+    var mainLoopTicker f64 = 1.0D
+    var mainLoopTracker LoopTracker = createLoopTracker(mainLoopTicker, "Main loop")
     var fpsTicker f64 = 1.0D
-    var fpsDisplayer FpsDisplayer = createFpsDisplayer(fpsTicker)
+    var fpsTracker LoopTracker = createLoopTracker(fpsTicker, "Render loop")
     var fpsLimit i32 = 60
-    var fpsLimiter FpsLimiter = createFpsLimiter(fpsLimit, true)
+    var fpsLimiter LoopLimiter = createLoopLimiter(fpsLimit, true)
 
     for bool.not(glfw.ShouldClose("window")) {
         var currentTime f64 = glfw.GetTime()
-        fpsLimiter = updateFpsLimiter(fpsLimiter, currentTime)
+
+        mainLoopTracker = updateLoopTracker(mainLoopTracker, currentTime)
+        fpsLimiter = updateLoopLimiter(fpsLimiter, currentTime)
+        
+        mainGameUpdate()
         
         if fpsLimiter.limitReached {
-            fpsDisplayer = updateFpsDisplayer(fpsDisplayer, currentTime)
-            update()
+            fpsTracker = updateLoopTracker(fpsTracker, currentTime)   
+            glfw.PollEvents()
+            glfw.SwapBuffers("window")
         }
-        
-        glfw.PollEvents()
-        glfw.SwapBuffers("window")
     }
 }
 
-func update() {
-
-}
+func mainGameUpdate() {}
 
 func main() {
     var window Window
@@ -127,3 +136,6 @@ func main() {
 
     startGame()
 }
+// *************************************
+// End - Example of Use
+// *************************************
