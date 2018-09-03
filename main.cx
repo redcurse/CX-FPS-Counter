@@ -2,10 +2,9 @@ package main
 import "glfw"
 
 // *************************************
-// START - FPS Manager
+// START - FPS Displayer
 // *************************************
-type FpsManager struct {
-    currentTime f64
+type FpsDisplayer struct {
     previousTime f64
     timer f64
     ticker f64
@@ -14,37 +13,70 @@ type FpsManager struct {
     showFps bool
 }
 
-func createFpsManager(ticker f64)(fpsManager FpsManager) {
-    var manager FpsManager
-    manager.currentTime = glfw.GetTime()
-    manager.previousTime = manager.currentTime
-    manager.timer = 1.0D
-    manager.ticker = ticker
-    manager.fpsCounter = 0
-    manager.currentFps = 0
-    manager.showFps = true
+func createFpsDisplayer(ticker f64)(fpsDisplayer FpsDisplayer) {
+    var displayer FpsDisplayer
+    displayer.timer = 1.0D
+    displayer.ticker = ticker
+    displayer.fpsCounter = 0
+    displayer.currentFps = 0
+    displayer.showFps = true
 
-    fpsManager = manager
+    fpsDisplayer = displayer
 }
 
-func updateFpsManager(manager FpsManager)(fpsManager FpsManager) {
-    manager.currentTime = glfw.GetTime()
-    manager.previousTime = manager.currentTime
-    manager.fpsCounter = manager.fpsCounter + 1
+func updateFpsDisplayer(displayer FpsDisplayer, currentTime f64)(fpsDisplayer FpsDisplayer) {
+    displayer.previousTime = currentTime
+    displayer.fpsCounter = displayer.fpsCounter + 1
 
-    if manager.currentTime - manager.timer > manager.ticker {
-        manager.timer = manager.timer + manager.ticker
-        manager.currentFps = f64.i32(i32.f64(manager.fpsCounter) / manager.ticker)
-        if manager.showFps {
-            i32.print(manager.currentFps)
+    if currentTime - displayer.timer > displayer.ticker {
+        displayer.timer = displayer.timer + displayer.ticker
+        displayer.currentFps = f64.i32(i32.f64(displayer.fpsCounter) / displayer.ticker)
+        if displayer.showFps {
+            i32.print(displayer.currentFps)
         }
-        manager.fpsCounter = 0
+        displayer.fpsCounter = 0
     }
 
-    fpsManager = manager
+    fpsDisplayer = displayer
 }
 // *************************************
-// END - FPS Manager
+// END - FPS Displayer
+// *************************************
+
+// *************************************
+// START - FPS Limiter
+// *************************************
+
+type FpsLimiter struct {
+    previousTime f64
+    delta f64
+    limit i32
+    limitReached bool
+}
+
+func createFpsLimiter(limit i32)(fpsLimiter FpsLimiter) {
+    var limiter FpsLimiter
+    limiter.limit = limit
+    fpsLimiter = limiter
+}
+
+func updateFpsLimiter(limiter FpsLimiter, currentTime f64)(fpsLimiter FpsLimiter) {
+    var ns f64 = 1.0D / i32.f64(limiter.limit)
+    limiter.delta = limiter.delta + (currentTime - limiter.previousTime) / ns
+    limiter.previousTime = currentTime
+
+    if limiter.delta >= 1.0D {
+        limiter.limitReached = true
+        limiter.delta = limiter.delta - 1.0D
+    } else {
+        limiter.limitReached = false
+    }
+
+    fpsLimiter = limiter
+}
+
+// *************************************
+// END - FPS Limiter
 // *************************************
 
 type Window struct {
@@ -60,13 +92,19 @@ func initGlfw (window Window) {
 }
 
 func startGame() {
-    var fpsManager FpsManager
     var fpsTicker f64 = 1.0D
-    fpsManager = createFpsManager(fpsTicker)
+    var fpsDisplayer FpsDisplayer = createFpsDisplayer(fpsTicker)
+    var fpsLimit i32 = 60
+    var fpsLimiter FpsLimiter = createFpsLimiter(fpsLimit)
 
     for bool.not(glfw.ShouldClose("window")) {
-        fpsManager = updateFpsManager(fpsManager)
-
+        var currentTime f64 = glfw.GetTime()
+        fpsLimiter = updateFpsLimiter(fpsLimiter, currentTime)
+        
+        if fpsLimiter.limitReached {
+            fpsDisplayer = updateFpsDisplayer(fpsDisplayer, currentTime)
+        }
+        
         glfw.PollEvents()
         glfw.SwapBuffers("window")
     }
