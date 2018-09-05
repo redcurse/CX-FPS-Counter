@@ -1,97 +1,9 @@
 package main
 import "glfw"
-
-// *************************************
-// START - Loop Tracker
-// *************************************
-type LoopTracker struct {
-    loopName str
-    deltaTime f64
-    previousTime f64
-    timer f64
-    ticker f64
-    fpsCounter i32
-    currentLoopsPerSecond i32
-    showLoopsPerSecond bool
-}
-
-func createLoopTracker(ticker f64, loopName str)(loopTracker LoopTracker) {
-    var tracker LoopTracker
-    tracker.loopName = loopName
-    tracker.timer = 1.0D
-    tracker.ticker = ticker
-    tracker.fpsCounter = 0
-    tracker.currentLoopsPerSecond = 0
-    tracker.showLoopsPerSecond = true
-
-    loopTracker = tracker
-}
-
-func updateLoopTracker(tracker LoopTracker, currentTime f64)(loopTracker LoopTracker) {
-    tracker.deltaTime = currentTime - tracker.previousTime
-    tracker.previousTime = currentTime
-    tracker.fpsCounter = tracker.fpsCounter + 1
-
-    if currentTime - tracker.timer > tracker.ticker {
-        tracker.timer = tracker.timer + tracker.ticker
-        tracker.currentLoopsPerSecond = f64.i32(i32.f64(tracker.fpsCounter) / tracker.ticker)
-        if tracker.showLoopsPerSecond {
-            printf("%s loops per second: %d \n", tracker.loopName, tracker.currentLoopsPerSecond)
-        }
-        tracker.fpsCounter = 0
-    }
-
-    loopTracker = tracker
-}
-// *************************************
-// END - Loop Tracker
-// *************************************
+import "LoopTracker"
+import "LoopLimiter"
 
 
-// *************************************
-// START - Loop Limiter
-// *************************************
-type LoopLimiter struct {
-    previousTime f64
-    delta f64
-    limit i32
-    limitReached bool
-    enabled bool
-}
-
-func createLoopLimiter(limit i32, enabled bool)(loopLimiter LoopLimiter) {
-    var limiter LoopLimiter
-    limiter.limit = limit
-    limiter.enabled = enabled
-    loopLimiter = limiter
-}
-
-func updateLoopLimiter(limiter LoopLimiter, currentTime f64)(loopLimiter LoopLimiter) {
-    if limiter.enabled {
-        var fractionOfSecond f64 = 1.0D / i32.f64(limiter.limit)
-        limiter.delta = limiter.delta + (currentTime - limiter.previousTime) / fractionOfSecond
-        limiter.previousTime = currentTime
-
-        if limiter.delta >= 1.0D {
-            limiter.limitReached = true
-            limiter.delta = limiter.delta - 1.0D
-        } else {
-            limiter.limitReached = false
-        }
-    } else {
-        limiter.limitReached = true
-    }
-
-    loopLimiter = limiter
-}
-// *************************************
-// END - Loop Limiter
-// *************************************
-
-
-// *************************************
-// Start - Example of Use
-// *************************************
 type Window struct {
     Height i32
     Width i32
@@ -105,23 +17,37 @@ func initGlfw (window Window) {
 }
 
 func startGame() {
+    // Create trackers for your loop.
+    // Set a ticker for how often the tracker is updated. 1.0D = once per second
+    // Give the tracker a name so you can see which loop is being displayed in the terminal
     var mainLoopTicker f64 = 1.0D
-    var mainLoopTracker LoopTracker = createLoopTracker(mainLoopTicker, "Main loop")
+    var mainLoopTracker LoopTracker.LoopTracker = LoopTracker.createLoopTracker(mainLoopTicker, "Main loop")
     var fpsTicker f64 = 1.0D
-    var fpsTracker LoopTracker = createLoopTracker(fpsTicker, "Render loop")
+    var fpsTracker LoopTracker.LoopTracker = LoopTracker.createLoopTracker(fpsTicker, "Render loop")
+
+    // Create a limiter to only allow blocks of code to run 'x' number of times per second
+    // Easily enable or disable the limiter
     var fpsLimit i32 = 30
-    var fpsLimiter LoopLimiter = createLoopLimiter(fpsLimit, true)
+    var fpsLimiter LoopLimiter.LoopLimiter = LoopLimiter.createLoopLimiter(fpsLimit, true)
 
     for bool.not(glfw.ShouldClose("window")) {
         var currentTime f64 = glfw.GetTime()
 
-        mainLoopTracker = updateLoopTracker(mainLoopTracker, currentTime)
-        fpsLimiter = updateLoopLimiter(fpsLimiter, currentTime)
+        // Run the update function in your loop to keep track of how many times your loop runs per second
+        mainLoopTracker = LoopTracker.updateLoopTracker(mainLoopTracker, currentTime)
+
+        // Update the limiter so it knows when the limit has been reached
+        fpsLimiter = LoopLimiter.updateLoopLimiter(fpsLimiter, currentTime)
         
+        // Pass the delta time into your main game update to keep the speed of your game consistant across devices
+        // Look up delta time for game development if unfamiliar
         mainGameUpdate(mainLoopTracker.deltaTime)
         
+        // Check if the limit has been reached
         if fpsLimiter.limitReached {
-            fpsTracker = updateLoopTracker(fpsTracker, currentTime)   
+
+            // You can update multiple trackers or limiters for your needs
+            fpsTracker = LoopTracker.updateLoopTracker(fpsTracker, currentTime)   
             glfw.PollEvents()
             glfw.SwapBuffers("window")
         }
@@ -138,6 +64,3 @@ func main() {
 
     startGame()
 }
-// *************************************
-// End - Example of Use
-// *************************************
